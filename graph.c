@@ -1,88 +1,85 @@
-typedef struct 
-{
-    int front;
-	int rear;
-	int *a;
-	int n;
-} MyCircularQueue;
+// Specification of queue:
 
-MyCircularQueue* myCircularQueueCreate(int k) 
-{
-    MyCircularQueue* q = malloc(sizeof *q);
-    q->a =(int*) malloc(sizeof(int) * k);
-    q->front =-1;
-    q->rear = -1;
-    q->n = k;
+typedef struct node {
+    int val;
+    struct node *next;
+} node;
+
+typedef struct queue {
+    int size;
+    node *head;
+    node *last;
+} queue;
+
+// Implementation queue:
+
+queue* init() {
+    queue *q = malloc(sizeof(queue));
+    q->size = 0;
+    q->head = NULL;
+    q->last = NULL;
     return q;
-    
 }
 
-bool myCircularQueueEnQueue(MyCircularQueue* q, int value)
-{
-    if((q->rear + 1) % q->n == q->front)
-		return false;
-	else
-	{
-	if (q->front == -1) 
-		q->front = 0;
-	q->rear=(q->rear+1)%q->n;
-	q->a[q->rear]=value;
-    return true;
-	}
-  
+bool is_empty_queue(queue *q) {
+    return q->size == 0;
 }
 
-bool myCircularQueueDeQueue(MyCircularQueue* q)
-{
-    if(q->front==-1)
-		return false;
-	else
-	{
-
-	if (q->front == q->rear) 
-	{
-      q->front = -1;
-      q->rear = -1;
+void enqueue(queue *q, int value) {
+    node *tmp = malloc(sizeof(node));
+    tmp->val = value;
+    tmp->next = NULL;
+    if (is_empty_queue(q)) {
+        q->head = tmp;
+        q->last = tmp;
+    } else {
+        q->last->next = tmp;
+        q->last = q->last->next;
     }
-    else
-      q->front = (q->front + 1) % q->n;
-        return true;
-	}
-  
+    q->size++;
 }
 
-int myCircularQueueFront(MyCircularQueue* q)
-{
-    if(q->front==-1)
-		return -1;
-    return q->a[q->front];
-  
+// Precondition: !is_empty_queue(q).
+int dequeue(queue *q) {
+    assert(!is_empty_queue(q));
+    node *tmp = q->head;
+    int value = tmp->val;
+    q->head = q->head->next;
+    q->size--;
+    free(tmp);
+    return value;
 }
 
-int myCircularQueueRear(MyCircularQueue* q) 
-{
-    if(q->front==-1)
-		return -1;
-   
-        return (q->a[q->rear]);
-          
-}
+// Enumerate for the colors:
 
-bool myCircularQueueIsEmpty(MyCircularQueue* q)
-{
-    if(q->front==-1)
-		return true;
-    return false;
-}
+typedef enum color {
+    UNVISITED = 0,
+    BLUE = 1,
+    RED = 2,
+} color;
 
-bool myCircularQueueIsFull(MyCircularQueue* q) 
-{
-    if((q->rear + 1) % q->n == q->front)
-		return true;
-  return false;
-}
+// Algorithm:
 
-void myCircularQueueFree(MyCircularQueue* obj)
-{
-    free(obj);
+bool isBipartite(int** graph, int graphSize, int* graphColSize){
+    queue *queueIndex = init();
+    color *colorArray = calloc(graphSize, sizeof(color));
+    memset(colorArray, UNVISITED, graphSize * sizeof(color));
+
+    for (int index = 0; index < graphSize; index++) {
+        if (colorArray[index] != UNVISITED) continue;
+        enqueue(queueIndex, index);
+        colorArray[index] = BLUE;
+        while (!is_empty_queue(queueIndex)) {
+            int vertexIndex = dequeue(queueIndex);
+            for (int i = 0; i < graphColSize[vertexIndex]; i++) {
+                int neighborIndex = graph[vertexIndex][i];
+                if (colorArray[neighborIndex] == UNVISITED) {
+                    enqueue(queueIndex, neighborIndex);
+                    colorArray[neighborIndex] = (colorArray[vertexIndex] == BLUE) ? RED : BLUE;
+                }
+                if (colorArray[neighborIndex] == colorArray[vertexIndex]) return false;
+            }
+        }
+    }
+    return true;
 }
